@@ -6,9 +6,13 @@ create table if not exists users (
   email_verified boolean default false,
   nickname text,
   profile jsonb default null,
+  is_super boolean default false,
   created_at timestamptz default now(),
   last_active_at timestamptz
 );
+
+-- 슈퍼 계정 컬럼 추가 (기존 테이블용)
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super BOOLEAN DEFAULT FALSE;
 
 -- 프로필 컬럼 추가 (기존 테이블용)
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS profile JSONB DEFAULT NULL;

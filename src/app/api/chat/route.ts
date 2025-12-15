@@ -31,7 +31,16 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient()
 
-    // 1. 일일 사용량 확인
+    // 0. 슈퍼 계정 여부 확인
+    const { data: userInfo } = await supabase
+      .from('users')
+      .select('is_super')
+      .eq('id', userId)
+      .single()
+
+    const isSuper = userInfo?.is_super || false
+
+    // 1. 일일 사용량 확인 (슈퍼 계정은 제한 없음)
     const { data: usage } = await supabase
       .from('daily_usage')
       .select('message_count')
@@ -41,7 +50,7 @@ export async function POST(request: Request) {
 
     const currentCount = usage?.message_count || 0
 
-    if (currentCount >= DAILY_MESSAGE_LIMIT) {
+    if (!isSuper && currentCount >= DAILY_MESSAGE_LIMIT) {
       return NextResponse.json(
         {
           error: 'LIMIT_EXCEEDED',
@@ -159,7 +168,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       replies,
-      remainingMessages: DAILY_MESSAGE_LIMIT - currentCount - 1,
+      remainingMessages: isSuper ? -1 : DAILY_MESSAGE_LIMIT - currentCount - 1,
     })
   } catch (error) {
     console.error('Chat API error:', error)

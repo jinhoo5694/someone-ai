@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const redirectTo = searchParams.get('redirectTo') || '/characters'
+  const redirectTo = searchParams.get('redirectTo') || '/friends'
 
   const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 

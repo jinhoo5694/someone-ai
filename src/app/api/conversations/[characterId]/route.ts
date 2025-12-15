@@ -18,6 +18,15 @@ export async function GET(
 
     const supabase = createAdminClient()
 
+    // 슈퍼 계정 여부 확인
+    const { data: userInfo } = await supabase
+      .from('users')
+      .select('is_super')
+      .eq('id', authUser.userId)
+      .single()
+
+    const isSuper = userInfo?.is_super || false
+
     // 대화 내역 조회
     const { data: conversation } = await supabase
       .from('conversations')
@@ -39,7 +48,7 @@ export async function GET(
 
     return NextResponse.json({
       messages: conversation?.messages || [],
-      remainingMessages: APP_CONFIG.DAILY_MESSAGE_LIMIT - currentCount,
+      remainingMessages: isSuper ? -1 : APP_CONFIG.DAILY_MESSAGE_LIMIT - currentCount,
     })
   } catch (error) {
     console.error('Conversations API error:', error)

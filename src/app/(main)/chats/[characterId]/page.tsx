@@ -151,7 +151,8 @@ export default function ChatPage() {
 
   // 메시지 전송 (디바운스 적용)
   const queueMessage = useCallback((content: string) => {
-    if (remainingMessages <= 0) {
+    // remainingMessages === -1은 무제한 (슈퍼 계정)
+    if (remainingMessages !== -1 && remainingMessages <= 0) {
       setShowLimitModal(true)
       track(EVENTS.LIMIT_REACHED)
       track(EVENTS.PREMIUM_MODAL_VIEW)

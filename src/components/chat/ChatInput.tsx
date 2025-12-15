@@ -31,12 +31,16 @@ export function ChatInput({
     }
   }
 
+  const isUnlimited = remainingMessages === -1
+
   return (
     <div className="p-4 border-t bg-white">
       {/* 잔여 메시지 표시 */}
       <div className="text-sm text-gray-500 mb-3 text-center">
         오늘 남은 메시지:{' '}
-        <span className="font-bold text-primary-500">{remainingMessages}개</span>
+        <span className="font-bold text-primary-500">
+          {isUnlimited ? '무제한' : `${remainingMessages}개`}
+        </span>
       </div>
 
       <div className="flex gap-3">
