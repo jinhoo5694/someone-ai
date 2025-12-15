@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createToken, setAuthCookie } from '@/lib/auth/jwt'
-import { headers } from 'next/headers'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const redirectTo = searchParams.get('redirectTo') || '/characters'
 
-  // 배포 환경에서 올바른 origin 가져오기
-  const headersList = await headers()
-  const host = headersList.get('host') || headersList.get('x-forwarded-host')
-  const protocol = headersList.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : 'http')
-  const origin = `${protocol}://${host}`
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
   if (!code) {
     return NextResponse.redirect(`${origin}/?error=no_code`)
