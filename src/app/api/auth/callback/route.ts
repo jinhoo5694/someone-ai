@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { createToken, setAuthCookie } from '@/lib/auth/jwt'
 
 export async function GET(request: Request) {
@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
 
   // Supabase OAuth 코드 교환
   const { data: authData, error: authError } =
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
   }
 
   // 기존 users 테이블에서 사용자 확인
-  const { data: existingUser } = await supabase
+  const { data: existingUser } = await adminSupabase
     .from('users')
     .select('id, email, nickname')
     .eq('email', email.toLowerCase())
@@ -46,17 +47,17 @@ export async function GET(request: Request) {
     userId = existingUser.id
     nickname = existingUser.nickname
 
-    await supabase
+    await adminSupabase
       .from('users')
       .update({ last_active_at: new Date().toISOString() })
       .eq('id', userId)
   } else {
     // 새 사용자 생성 (구글 로그인은 이메일 인증 완료 상태로)
-    const { data: newUser, error: createError } = await supabase
+    const { data: newUser, error: createError } = await adminSupabase
       .from('users')
       .insert({
         email: email.toLowerCase(),
-        password_hash: '', // OAuth 사용자는 비밀번호 없음
+        password_hash: 'OAUTH_USER', // OAuth 사용자는 비밀번호 로그인 불가
         email_verified: true, // 구글에서 이미 인증됨
         nickname: supabaseUser.user_metadata?.full_name || null,
       })
@@ -65,6 +66,7 @@ export async function GET(request: Request) {
 
     if (createError || !newUser) {
       console.error('User creation error:', createError)
+      console.error('Create error details:', JSON.stringify(createError, null, 2))
       return NextResponse.redirect(`${origin}/?error=user_creation_failed`)
     }
 
