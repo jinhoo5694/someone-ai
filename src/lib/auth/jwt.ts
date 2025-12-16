@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
+import { createAdminClient } from '@/lib/supabase/server'
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-change-in-production'
@@ -54,7 +55,39 @@ export async function removeAuthCookie() {
 }
 
 export async function getCurrentUser(): Promise<JWTPayload | null> {
-  const token = await getAuthCookie()
-  if (!token) return null
-  return verifyToken(token)
+  // First, try cookie-based auth (web)
+  const cookieToken = await getAuthCookie()
+  if (cookieToken) {
+    return verifyToken(cookieToken)
+  }
+
+  // Then, try Bearer token auth (mobile)
+  const headersList = await headers()
+  const authHeader = headersList.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+
+    // First try to verify as our custom JWT
+    const customJwtPayload = await verifyToken(token)
+    if (customJwtPayload) {
+      return customJwtPayload
+    }
+
+    // If not our JWT, try to verify as Supabase token
+    try {
+      const supabase = createAdminClient()
+      const { data: { user }, error } = await supabase.auth.getUser(token)
+
+      if (!error && user) {
+        return {
+          userId: user.id,
+          username: user.user_metadata?.name || user.email || 'User',
+        }
+      }
+    } catch {
+      // Token verification failed
+    }
+  }
+
+  return null
 }
